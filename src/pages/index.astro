@@ -1,5 +1,4 @@
 ---
-import Welcome from "../components/Welcome.astro";
 import Layout from "../layouts/Layout.astro";
 
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
@@ -12,24 +11,25 @@ import Layout from "../layouts/Layout.astro";
       <h1>Sort-it</h1>
       <h4>See it, say it, sorted</h4>
     </div>
-    <button>Options</button>
   </header>
   <main>
     <div class="io">
       <div class="input">
         <div class="ioHeader">
           <h3>Input</h3>
+          <button>Options</button>
         </div>
         <div class="textareaWrapper">
-          <textarea></textarea>
+          <textarea id="textInput"></textarea>
         </div>
       </div>
       <div class="output">
         <div class="ioHeader">
           <h3>Output</h3>
+          <button id="outputCopy">Copy</button>
         </div>
         <div class="textareaWrapper">
-          <textarea></textarea>
+          <textarea id="textOutput" readonly></textarea>
         </div>
       </div>
     </div>
@@ -54,17 +54,6 @@ import Layout from "../layouts/Layout.astro";
         margin: 0;
       }
     }
-
-    button {
-      min-width: 200px;
-      height: 64px;
-
-      background: rgb(29, 36, 49);
-      border: 1px solid rgb(49, 56, 72);
-      border-radius: 8px;
-      color: rgb(74, 203, 139);
-      font-size: 1rem;
-    }
   }
 
   main {
@@ -86,6 +75,19 @@ import Layout from "../layouts/Layout.astro";
         .ioHeader {
           padding: 1rem 1.5rem;
           background: rgb(3, 7, 23);
+          display: flex;
+          flex-flow: row nowrap;
+          justify-content: space-between;
+
+          button {
+            padding: 0.25rem 0.5rem;
+            width: 100px;
+            background: rgb(29, 36, 49);
+            border: 1px solid rgb(49, 56, 72);
+            border-radius: 8px;
+            color: rgb(74, 203, 139);
+            font-size: 1rem;
+          }
         }
         h3 {
           margin: 0;
@@ -121,3 +123,56 @@ import Layout from "../layouts/Layout.astro";
     }
   }
 </style>
+
+<script>
+  const sortJsonArray = (array: Array<unknown>): Array<unknown> => {
+    return array;
+  };
+
+  const input = document.querySelector("#textInput")! as HTMLTextAreaElement;
+  const output = document.querySelector("#textOutput")! as HTMLTextAreaElement;
+  const button = document.querySelector("#outputCopy")! as HTMLButtonElement;
+
+  button.onclick = () => {
+    console.log("Clicked");
+  };
+
+  input.addEventListener("input", (event) => {
+    const value = (event.target as HTMLTextAreaElement).value;
+
+    try {
+      const json = JSON.parse(value);
+
+      if (Array.isArray(json)) {
+        output.value = JSON.stringify(sortJsonArray(json), undefined, 2);
+        return;
+      } else {
+        throw new Error("Can't sort json objects");
+      }
+    } catch (e) {
+      // content is not JSON, do not continue
+      console.log("err");
+    }
+
+    output!.value = value.split("\n").toSorted().join("\n");
+  });
+
+  let resizingLock = false;
+  const resizeOverserver = new ResizeObserver((entries) => {
+    if (resizingLock) return;
+    resizingLock = true;
+    entries.forEach((entry) => {
+      const newHeight = entry.contentRect.height;
+      const subjectTextArea = entry.target as HTMLTextAreaElement;
+      if (subjectTextArea === input) {
+        output.style.height = `${newHeight}px`;
+      }
+      if (subjectTextArea === output) {
+        input.style.height = `${newHeight}px`;
+      }
+    });
+    resizingLock = false;
+  });
+  resizeOverserver.observe(input);
+  resizeOverserver.observe(output);
+</script>
