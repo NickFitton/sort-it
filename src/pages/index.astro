@@ -112,7 +112,7 @@ import Layout from "../layouts/Layout.astro";
           margin: 0;
 
           border: none;
-          font-family: "Atkinson Hyperlegible Next", serif;
+          font-family: "Fira Code", serif;
           font-optical-sizing: auto;
           font-style: normal;
           color: rgb(168, 240, 202);
@@ -125,16 +125,30 @@ import Layout from "../layouts/Layout.astro";
 </style>
 
 <script>
+  type MimeType =
+    | "text/calendar"
+    | "text/css"
+    | "text/csv"
+    | "text/html"
+    | "text/javascript"
+    | "text/plain"
+    | "text/xml"
+    | "application/json";
+  let mimeType: MimeType = "text/plain";
   const sortJsonArray = (array: Array<unknown>): Array<unknown> => {
     return array;
   };
 
   const input = document.querySelector("#textInput")! as HTMLTextAreaElement;
   const output = document.querySelector("#textOutput")! as HTMLTextAreaElement;
-  const button = document.querySelector("#outputCopy")! as HTMLButtonElement;
+  const copyButton = document.querySelector(
+    "#outputCopy"
+  )! as HTMLButtonElement;
 
-  button.onclick = () => {
+  copyButton.onclick = () => {
     console.log("Clicked");
+    const clipboardItem = new ClipboardItem({ [mimeType]: output.value });
+    navigator.clipboard.write([clipboardItem]);
   };
 
   input.addEventListener("input", (event) => {
@@ -145,6 +159,7 @@ import Layout from "../layouts/Layout.astro";
 
       if (Array.isArray(json)) {
         output.value = JSON.stringify(sortJsonArray(json), undefined, 2);
+        mimeType = "application/json";
         return;
       } else {
         throw new Error("Can't sort json objects");
