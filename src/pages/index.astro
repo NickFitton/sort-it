@@ -1,8 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import { sort } from "../logic/sorting";
 ---
 
 <Layout>
@@ -125,69 +123,42 @@ import Layout from "../layouts/Layout.astro";
 </style>
 
 <script>
-  type MimeType =
-    | "text/calendar"
-    | "text/css"
-    | "text/csv"
-    | "text/html"
-    | "text/javascript"
-    | "text/plain"
-    | "text/xml"
-    | "application/json";
-  let mimeType: MimeType = "text/plain";
-  const sortJsonArray = (array: Array<unknown>): Array<unknown> => {
-    return array;
-  };
+  import { sort } from "../logic/sorting";
+  import type { OutputMimeType } from "../logic/sorting";
+  import { resizeObserverFn } from "../logic/resizeHandler";
 
-  const input = document.querySelector("#textInput")! as HTMLTextAreaElement;
-  const output = document.querySelector("#textOutput")! as HTMLTextAreaElement;
+  let mimeType: OutputMimeType = "text/plain";
+
+  const inputTextArea = document.querySelector(
+    "#textInput"
+  )! as HTMLTextAreaElement;
+  const outputTextArea = document.querySelector(
+    "#textOutput"
+  )! as HTMLTextAreaElement;
   const copyButton = document.querySelector(
     "#outputCopy"
   )! as HTMLButtonElement;
 
   copyButton.onclick = () => {
     console.log("Clicked");
-    const clipboardItem = new ClipboardItem({ [mimeType]: output.value });
+    const clipboardItem = new ClipboardItem({
+      [mimeType]: outputTextArea.value,
+    });
     navigator.clipboard.write([clipboardItem]);
   };
 
-  input.addEventListener("input", (event) => {
+  inputTextArea.addEventListener("input", (event) => {
     const value = (event.target as HTMLTextAreaElement).value;
 
-    try {
-      const json = JSON.parse(value);
+    const { output, metadata } = sort(value, {}, { mimeType: "text/plain" });
 
-      if (Array.isArray(json)) {
-        output.value = JSON.stringify(sortJsonArray(json), undefined, 2);
-        mimeType = "application/json";
-        return;
-      } else {
-        throw new Error("Can't sort json objects");
-      }
-    } catch (e) {
-      // content is not JSON, do not continue
-      console.log("err");
-    }
-
-    output!.value = value.split("\n").toSorted().join("\n");
+    outputTextArea!.value = output;
+    mimeType = metadata.mimeType;
   });
 
-  let resizingLock = false;
-  const resizeOverserver = new ResizeObserver((entries) => {
-    if (resizingLock) return;
-    resizingLock = true;
-    entries.forEach((entry) => {
-      const newHeight = entry.contentRect.height;
-      const subjectTextArea = entry.target as HTMLTextAreaElement;
-      if (subjectTextArea === input) {
-        output.style.height = `${newHeight}px`;
-      }
-      if (subjectTextArea === output) {
-        input.style.height = `${newHeight}px`;
-      }
-    });
-    resizingLock = false;
-  });
-  resizeOverserver.observe(input);
-  resizeOverserver.observe(output);
+  const resizeOverserver = new ResizeObserver(
+    resizeObserverFn(inputTextArea, outputTextArea)
+  );
+  resizeOverserver.observe(inputTextArea);
+  resizeOverserver.observe(outputTextArea);
 </script>
