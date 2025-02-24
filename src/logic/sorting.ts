@@ -26,7 +26,11 @@ export const sort: SortFn<string> = (
     if (Array.isArray(json)) {
       return sortJsonArray(json, options, metadata);
     } else {
-      throw new Error("Can't sort json objects");
+      console.error("Cannot sort json objects");
+      return {
+        output: JSON.stringify(json, undefined, 2),
+        metadata: { ...metadata, mimeType: "application/json" },
+      };
     }
   } catch (e) {
     // content is not JSON, do not continue
